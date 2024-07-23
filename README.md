@@ -2,7 +2,7 @@
 > [!WARNING]
 > This is still in its prototyping phase.
 > <br>
-> This is a prototype of a PCB business card <b>under $3</b> in which one can play a game and play a video.
+ This is a prototype of a PCB business card <b>under $3</b> in which one can play a game and play a video.
 
 # The things this can do:
 - [x] Play a video at 10fps
