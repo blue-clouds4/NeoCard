@@ -301,6 +301,6 @@ void displayVideo() {
 >what it basically does
 ## how the video part works:
 * entered bitmap data cycles constatntly on a fps of 10
-![image](https://github.com/user-attachments/assets/7f594c91-6d9e-495b-9379-7ae118aa5726)
 >did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
 *the video can only be played in monochrome(white and black according to the parts used)
+![image](https://github.com/user-attachments/assets/7f594c91-6d9e-495b-9379-7ae118aa5726)
