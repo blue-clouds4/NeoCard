@@ -272,3 +272,9 @@ void setRandomBubblePosition() {
   bubbleX = random(0, SCREEN_WIDTH - 40);
   bubbleY = random(0, SCREEN_HEIGHT - 10);
 }
+```
+## how the game works:
+
+-its a cube roaming around in void,symbolising neo in the matrix. while he roams,rando messages in the interval 8 seconds display a message amoungst 100 messages.
+-one of these 100 messages are displayed,this symbolises Morpheus trying to contact neo.
+>i had to come up with a game idea that runs well in a esp-12f and i assume ive assumed what i wanted to do
