@@ -141,6 +141,7 @@ Mode currentMode = SELECTION;
 unsigned long startTime = 0;
 bool isMessageDisplayed = false;
 
+/* Commenting out video-related variables and functions
 // Video frame variables
 const int FRAME_COUNT = 25; // Change this to the number of frames you have
 const unsigned char* videoFrames[FRAME_COUNT] = {
@@ -148,6 +149,7 @@ const unsigned char* videoFrames[FRAME_COUNT] = {
 };
 unsigned long lastFrameTime = 0;
 const unsigned long FRAME_DELAY = 100; // 100 ms for 10 FPS
+*/
 
 const unsigned char borderBitmap[] PROGMEM = {
   0b11111111, 0b11111111, 0b11111111, 
@@ -157,132 +159,135 @@ const unsigned char borderBitmap[] PROGMEM = {
   0b11000000, 0b00000000, 0b00000011, 
   0b11000000, 0b00000000, 0b00000011, 
   0b11000000, 0b00000000, 0b00000011, 
-  0b11000000, 0b00000000, 0b00000011, 
-  0b11000000, 0b00000000, 0b00000011, 
   0b11111111, 0b11111111, 0b11111111
 };
 
 void setup() {
+  pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(VIDEO_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BATTERY_PIN, INPUT);
   pinMode(UP_BUTTON_PIN, INPUT_PULLUP);
   pinMode(DOWN_BUTTON_PIN, INPUT_PULLUP);
   pinMode(LEFT_BUTTON_PIN, INPUT_PULLUP);
   pinMode(RIGHT_BUTTON_PIN, INPUT_PULLUP);
   pinMode(CLOSE_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(VIDEO_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
-
-  Serial.begin(115200);
-
-  if (!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
+  
+  if(!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
     Serial.println(F("SSD1306 allocation failed"));
-    for (;;);
+    for(;;);
   }
   display.display();
   delay(2000);
   display.clearDisplay();
-  display.display();
-
-  setRandomBubblePosition();
-  startTime = millis();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
 }
 
 void loop() {
-  unsigned long currentTime = millis();
+  switch (currentMode) {
+    case SELECTION:
+      displaySelectionScreen();
+      break;
+    case GAME:
+      displayGame();
+      break;
+    case VIDEO:
+      displayVideo();
+      break;
+  }
+}
 
-  if (currentTime - startTime < 20000) {
-    if (digitalRead(VIDEO_BUTTON_PIN) == LOW) {
-      currentMode = VIDEO;
-    }
-    if (digitalRead(GAME_BUTTON_PIN) == LOW) {
-      currentMode = GAME;
-    }
-  } else {
+void displaySelectionScreen() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print(F("Select Mode:"));
+  display.setCursor(0, 10);
+  display.print(F("1. Game"));
+  display.setCursor(0, 20);
+  display.print(F("2. Video"));
+
+  display.setCursor(0, 40);
+  int batteryStatus = analogRead(BATTERY_PIN) / 10;
+  display.print("Battery: ");
+  display.print(batteryStatus);
+  display.print("%");
+
+  display.display();
+  
+  if (digitalRead(GAME_BUTTON_PIN) == LOW) {
+    delay(100); // Debounce delay
     currentMode = GAME;
+  }
+  
+  if (digitalRead(VIDEO_BUTTON_PIN) == LOW) {
+    delay(100); // Debounce delay
+    currentMode = VIDEO;
+  }
+}
+
+void displayGame() {
+  // Character movement
+  if (digitalRead(UP_BUTTON_PIN) == LOW) {
+    charY = max(0, charY - 1);
+  }
+  if (digitalRead(DOWN_BUTTON_PIN) == LOW) {
+    charY = min(SCREEN_HEIGHT - 1, charY + 1);
+  }
+  if (digitalRead(LEFT_BUTTON_PIN) == LOW) {
+    charX = max(0, charX - 1);
+  }
+  if (digitalRead(RIGHT_BUTTON_PIN) == LOW) {
+    charX = min(SCREEN_WIDTH - 1, charX + 1);
   }
 
   display.clearDisplay();
 
-  switch (currentMode) {
-    case SELECTION:
-      display.setCursor(0, 0);
-      display.print("Select mode:");
-      display.setCursor(0, 10);
-      display.print("1. Video");
-      display.setCursor(0, 20);
-      display.print("2. Game");
-      break;
+  // Draw character
+  display.fillRect(charX, charY, 2, 2, SSD1306_WHITE);
 
-    case VIDEO:
-      // Display video frames
-      if (currentTime - lastFrameTime >= FRAME_DELAY) {
-        static int frameIndex = 0;
-        display.clearDisplay();
-        display.drawBitmap(0, 0, videoFrames[frameIndex], SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
-        lastFrameTime = currentTime;
-        frameIndex = (frameIndex + 1) % FRAME_COUNT;
-      }
-      break;
-
-    case GAME:
-      // Draw character
-      display.fillRect(charX, charY, 5, 5, SSD1306_WHITE);
-
-      // Display bubble text at intervals
-      if (currentTime - lastBubbleTime >= BUBBLE_DELAY) {
-        lastBubbleTime = currentTime;
-        bubbleIndex = (bubbleIndex + 1) % (sizeof(bubbles) / sizeof(bubbles[0]));
-        setRandomBubblePosition();
-        isMessageDisplayed = true;
-      }
-
-      if (isMessageDisplayed) {
-        // Draw bubble text with border
-        display.drawBitmap(bubbleX - 3, bubbleY - 3, borderBitmap, 40, 10, SSD1306_WHITE);
-        display.setCursor(bubbleX, bubbleY);
-        display.setTextColor(SSD1306_WHITE);
-        display.print(bubbles[bubbleIndex]);
-
-        // Check if user closes bubble
-        if (digitalRead(CLOSE_BUTTON_PIN) == LOW) {
-          isMessageDisplayed = false;
-          delay(300); // Debounce delay
-        }
-      } else {
-        // Check for user input to move character
-        if (digitalRead(UP_BUTTON_PIN) == LOW) {
-          charY = max(0, charY - 1);
-        }
-        if (digitalRead(DOWN_BUTTON_PIN) == LOW) {
-          charY = min(SCREEN_HEIGHT - 5, charY + 1);
-        }
-        if (digitalRead(LEFT_BUTTON_PIN) == LOW) {
-          charX = max(0, charX - 1);
-        }
-        if (digitalRead(RIGHT_BUTTON_PIN) == LOW) {
-          charX = min(SCREEN_WIDTH - 5, charX + 1);
-        }
-      }
-
-      // Display battery status at the top right corner
-      display.setCursor(SCREEN_WIDTH - 60, 0);
-      display.setTextColor(SSD1306_WHITE);
-      float batteryVoltage = analogRead(BATTERY_PIN) * (5.0 / 1023.0);
-      int batteryPercentage = (batteryVoltage - 3.0) / (4.2 - 3.0) * 100;
-      batteryPercentage = constrain(batteryPercentage, 0, 100);
-      display.print("Battery: ");
-      display.print(batteryPercentage);
-      display.println("%");
-
-      break;
+  // Display text bubble
+  if (millis() - lastBubbleTime > BUBBLE_DELAY) {
+    bubbleIndex = random(0, sizeof(bubbles) / sizeof(bubbles[0]));
+    bubbleX = random(0, SCREEN_WIDTH - 50);
+    bubbleY = random(0, SCREEN_HEIGHT - 10);
+    lastBubbleTime = millis();
   }
 
+  display.setCursor(bubbleX, bubbleY);
+  display.print(bubbles[bubbleIndex]);
+
   display.display();
+
+  // Exit to selection screen
+  if (digitalRead(CLOSE_BUTTON_PIN) == LOW) {
+    delay(100); // Debounce delay
+    currentMode = SELECTION;
+  }
 }
 
-void setRandomBubblePosition() {
-  bubbleX = random(0, SCREEN_WIDTH - 40);
-  bubbleY = random(0, SCREEN_HEIGHT - 10);
+void displayVideo() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print(F("Video mode is in development..."));
+  display.display();
+
+  delay(5000); // 5-second delay
+  currentMode = SELECTION;
+
+  /* Commenting out video frame display
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastFrameTime > FRAME_DELAY) {
+    static int frameIndex = 0;
+    display.clearDisplay();
+    display.drawBitmap(0, 0, videoFrames[frameIndex], SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
+    display.display();
+    frameIndex = (frameIndex + 1) % FRAME_COUNT;
+    lastFrameTime = currentTime;
+  }
+  */
 }
+//the video integration part has its code done,feel free to copy paste the code and use your own bitmap data for the code.I'm planning to integrate my custom monochrome animation,which i'm lazy to integrate now
 
 ```
 ## how the game works:
@@ -298,4 +303,4 @@ void setRandomBubblePosition() {
 * entered bitmap data cycles constatntly on a fps of 10
 ![image](https://github.com/user-attachments/assets/7f594c91-6d9e-495b-9379-7ae118aa5726)
 >did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
-
+*the video can only be played in monochrome(white and black according to the parts used)
