@@ -296,7 +296,6 @@ void setRandomBubblePosition() {
 >what it basically does
 ## how the video part works:
 * entered bitmap data cycles constatntly on a fps of 10
->did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
 ![image](https://github.com/user-attachments/assets/7f594c91-6d9e-495b-9379-7ae118aa5726)
->what it does
+>did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
 
