@@ -1,4 +1,4 @@
-# pcb businesss card_
+# NeoCard
 > [!WARNING]
 > This is still in its prototyping phase.
 <br>
