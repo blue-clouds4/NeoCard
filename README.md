@@ -141,6 +141,14 @@ Mode currentMode = SELECTION;
 unsigned long startTime = 0;
 bool isMessageDisplayed = false;
 
+// Video frame variables
+const int FRAME_COUNT = 25; // Change this to the number of frames you have
+const unsigned char* videoFrames[FRAME_COUNT] = {
+  // Add your bitmap frame data here
+};
+unsigned long lastFrameTime = 0;
+const unsigned long FRAME_DELAY = 100; // 100 ms for 10 FPS
+
 const unsigned char borderBitmap[] PROGMEM = {
   0b11111111, 0b11111111, 0b11111111, 
   0b11000000, 0b00000000, 0b00000011, 
@@ -151,116 +159,142 @@ const unsigned char borderBitmap[] PROGMEM = {
   0b11000000, 0b00000000, 0b00000011, 
   0b11000000, 0b00000000, 0b00000011, 
   0b11000000, 0b00000000, 0b00000011, 
-  0b11000000, 0b00000000, 0b00000011, 
-  0b11000011, 0b00000000, 0b00000011, 
-    0b11000011, 0b11111111, 0b00000011, 
-  0b11000000, 0b00000000, 0b00000011, 
   0b11111111, 0b11111111, 0b11111111
 };
 
 void setup() {
-  pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(VIDEO_BUTTON_PIN, INPUT_PULLUP);
   pinMode(UP_BUTTON_PIN, INPUT_PULLUP);
   pinMode(DOWN_BUTTON_PIN, INPUT_PULLUP);
   pinMode(LEFT_BUTTON_PIN, INPUT_PULLUP);
   pinMode(RIGHT_BUTTON_PIN, INPUT_PULLUP);
   pinMode(CLOSE_BUTTON_PIN, INPUT_PULLUP);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  pinMode(VIDEO_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
+
+  Serial.begin(115200);
+
+  if (!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  display.display();
+  delay(2000);
   display.clearDisplay();
   display.display();
-}
 
-void drawBatteryStatus() {
-  int batteryLevel = analogRead(BATTERY_PIN);
-  float voltage = batteryLevel * (3.3 / 1023.0);
-  int percentage = map(voltage * 100, 0, 330, 0, 100);
-
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.print("Battery: ");
-  display.print(percentage);
-  display.println("%");
-}
-
-void drawCharacter(int x, int y) {
-  display.fillRect(x, y, 5, 5, SSD1306_WHITE);
-}
-
-void showTextBubble(const String& text) {
-  display.fillRect(bubbleX, bubbleY, SCREEN_WIDTH - 10, 20, SSD1306_WHITE);
-  display.setTextColor(SSD1306_BLACK);
-  display.setCursor(bubbleX + 2, bubbleY + 2);
-  display.print(text);
+  setRandomBubblePosition();
+  startTime = millis();
 }
 
 void loop() {
-  drawBatteryStatus();
+  unsigned long currentTime = millis();
 
-  if (digitalRead(GAME_BUTTON_PIN) == LOW) {
+  if (currentTime - startTime < 20000) {
+    if (digitalRead(VIDEO_BUTTON_PIN) == LOW) {
+      currentMode = VIDEO;
+    }
+    if (digitalRead(GAME_BUTTON_PIN) == LOW) {
+      currentMode = GAME;
+    }
+  } else {
     currentMode = GAME;
-  } else if (digitalRead(VIDEO_BUTTON_PIN) == LOW) {
-    currentMode = VIDEO;
   }
+
+  display.clearDisplay();
 
   switch (currentMode) {
     case SELECTION:
+      display.setCursor(0, 0);
+      display.print("Select mode:");
+      display.setCursor(0, 10);
+      display.print("1. Video");
       display.setCursor(0, 20);
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.println("Select Mode");
-      display.setCursor(10, 40);
-      display.setTextSize(1);
-      display.println("Press GAME or VIDEO button");
-      display.display();
+      display.print("2. Game");
       break;
-    case GAME:
-      if (millis() - lastBubbleTime > BUBBLE_DELAY) {
-        lastBubbleTime = millis();
-        bubbleX = random(0, SCREEN_WIDTH - 60);
-        bubbleY = random(0, SCREEN_HEIGHT - 20);
-        bubbleIndex = random(0, sizeof(bubbles) / sizeof(bubbles[0]));
 
-        // Play music clip
-        // Insert code to play the 5-second music clip here
-
-        // 40% chance for rare message
-        showRareMessage = random(0, 100) < 40;
-      }
-      if (digitalRead(UP_BUTTON_PIN) == LOW) {
-        charY = max(0, charY - 1);
-      }
-      if (digitalRead(DOWN_BUTTON_PIN) == LOW) {
-        charY = min(SCREEN_HEIGHT - 5, charY + 1);
-      }
-      if (digitalRead(LEFT_BUTTON_PIN) == LOW) {
-        charX = max(0, charX - 1);
-      }
-      if (digitalRead(RIGHT_BUTTON_PIN) == LOW) {
-        charX = min(SCREEN_WIDTH - 5, charX + 1);
-      }
-      if (digitalRead(CLOSE_BUTTON_PIN) == LOW) {
-        display.clearDisplay();
-      }
-
-      display.clearDisplay();
-      drawCharacter(charX, charY);
-      showTextBubble(showRareMessage ? "YOU FOUND THE RARE MESSAGE!" : bubbles[bubbleIndex]);
-      display.display();
-      break;
     case VIDEO:
-      // No video control features
+      // Display video frames
+      if (currentTime - lastFrameTime >= FRAME_DELAY) {
+        static int frameIndex = 0;
+        display.clearDisplay();
+        display.drawBitmap(0, 0, videoFrames[frameIndex], SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
+        lastFrameTime = currentTime;
+        frameIndex = (frameIndex + 1) % FRAME_COUNT;
+      }
+      break;
+
+    case GAME:
+      // Draw character
+      display.fillRect(charX, charY, 5, 5, SSD1306_WHITE);
+
+      // Display bubble text at intervals
+      if (currentTime - lastBubbleTime >= BUBBLE_DELAY) {
+        lastBubbleTime = currentTime;
+        bubbleIndex = (bubbleIndex + 1) % (sizeof(bubbles) / sizeof(bubbles[0]));
+        setRandomBubblePosition();
+        isMessageDisplayed = true;
+      }
+
+      if (isMessageDisplayed) {
+        // Draw bubble text with border
+        display.drawBitmap(bubbleX - 3, bubbleY - 3, borderBitmap, 40, 10, SSD1306_WHITE);
+        display.setCursor(bubbleX, bubbleY);
+        display.setTextColor(SSD1306_WHITE);
+        display.print(bubbles[bubbleIndex]);
+
+        // Check if user closes bubble
+        if (digitalRead(CLOSE_BUTTON_PIN) == LOW) {
+          isMessageDisplayed = false;
+          delay(300); // Debounce delay
+        }
+      } else {
+        // Check for user input to move character
+        if (digitalRead(UP_BUTTON_PIN) == LOW) {
+          charY = max(0, charY - 1);
+        }
+        if (digitalRead(DOWN_BUTTON_PIN) == LOW) {
+          charY = min(SCREEN_HEIGHT - 5, charY + 1);
+        }
+        if (digitalRead(LEFT_BUTTON_PIN) == LOW) {
+          charX = max(0, charX - 1);
+        }
+        if (digitalRead(RIGHT_BUTTON_PIN) == LOW) {
+          charX = min(SCREEN_WIDTH - 5, charX + 1);
+        }
+      }
+
+      // Display battery status at the top right corner
+      display.setCursor(SCREEN_WIDTH - 60, 0);
+      display.setTextColor(SSD1306_WHITE);
+      float batteryVoltage = analogRead(BATTERY_PIN) * (5.0 / 1023.0);
+      int batteryPercentage = (batteryVoltage - 3.0) / (4.2 - 3.0) * 100;
+      batteryPercentage = constrain(batteryPercentage, 0, 100);
+      display.print("Battery: ");
+      display.print(batteryPercentage);
+      display.println("%");
+
       break;
   }
-  delay(100);
+
+  display.display();
 }
 
+void setRandomBubblePosition() {
+  bubbleX = random(0, SCREEN_WIDTH - 40);
+  bubbleY = random(0, SCREEN_HEIGHT - 10);
+}
 
 ```
 ## how the game works:
 
--its a cube roaming around in void,symbolising neo in the matrix. while he roams,random messages in the interval 8 seconds display a message amoungst 100 messages.
--one of these 100 messages are displayed,this symbolises Morpheus trying to contact neo.
--the matrix has you,and there is nothing you can do,for you're a cube
+* its a cube roaming around in void,symbolising neo in the matrix. while he roams,random messages in the interval 8 seconds display a message amoungst 100 messages.
+* one of these 100 messages are displayed,this symbolises Morpheus trying to contact neo.
+* the matrix has you,and there is nothing you can do,for you're a cube
 >i had to come up with a game idea that runs well in a esp-12f and i assume ive assumed what i wanted to do
+
+![image](https://github.com/user-attachments/assets/0f77c556-c21c-48cb-a877-bf346d251d20)
+>what it basically does
+## how the video part works:
+* entered bitmap data cycles constatntly on a fps of 10
+>did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
+* later i shall add the block-prgramming integrationof the same ofr understanding purposes
