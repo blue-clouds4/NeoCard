@@ -5,7 +5,7 @@
  This is a prototype of a PCB business card <b>under $3</b> in which one can play a game and play a video.
 
 # The things this can do:
-- [x] Play a video at 10fps
+- [ ] Play a video at 10fps
 - [x] Run a game (more on that below)
 - [x] Transmit NFC messages
 - [x] Look cool
@@ -297,4 +297,6 @@ void setRandomBubblePosition() {
 ## how the video part works:
 * entered bitmap data cycles constatntly on a fps of 10
 >did so because, im afriad that the esp-12f may lag when given the operation to run the video exceeding 10 fps
-* later i shall add the block-prgramming integrationof the same ofr understanding purposes
+![image](https://github.com/user-attachments/assets/7f594c91-6d9e-495b-9379-7ae118aa5726)
+>what it does
+
