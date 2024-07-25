@@ -11,7 +11,9 @@
 - [x] Look cool
 
 ![image](https://github.com/user-attachments/assets/5b3fc10e-1e82-4d7a-95fd-9b008305f782)
-![image](https://github.com/user-attachments/assets/ac27b5b5-8f54-4014-91fa-30f0f7289745)
+![image](https://github.com/user-attachments/assets/94e2b29f-5a3e-4bdc-9da0-cf3e8fd23d45)
+![image](https://github.com/user-attachments/assets/ae6bb44b-6eeb-40cb-9b7b-73098d19d64d)
+![image](https://github.com/user-attachments/assets/b5111bf2-4a36-4320-aa13-574c7865694c)
 
 
 <hr>
