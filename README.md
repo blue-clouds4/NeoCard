@@ -2,7 +2,7 @@
 > [!WARNING]
 > This is still in its prototyping phase.
 <br>
- This is a prototype of a PCB business card <b>under $15</b> in which one can play a game and play a video. The project's complete,the code has no bitmap in it,meaning you have to add your very own bitmap for the animation.
+ This is a prototype of a PCB business card <b>under $5</b> in which one can play a game and play a video. The project's complete,the code has no bitmap in it,meaning you have to add your very own bitmap for the animation.
 
 # The things this can do:
 - [x] Play a video at 10fps
